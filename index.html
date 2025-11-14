@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Analizador de Gráficas - Versión Web</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<style>
+    body {
+        margin: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #121212;
+        color: #eaeaea;
+        display: flex;
+        height: 100vh;
+    }
+
+    #grafica {
+        width: 65%;
+        height: 100%;
+        border-right: 3px solid #222;
+        background: #181818;
+    }
+
+    #panel {
+        width: 35%;
+        padding: 25px;
+        background: #1d1d1d;
+    }
+
+    h1 {
+        margin-top: 0;
+        color: #ffffff;
+        font-size: 28px;
+        text-align: center;
+        letter-spacing: 1px;
+    }
+
+    label {
+        font-weight: bold;
+        color: #cfcfcf;
+        margin-top: 10px;
+        display: block;
+    }
+
+    input {
+        width: 95%;
+        padding: 10px;
+        font-size: 16px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+        border: 1px solid #444;
+        background: #2a2a2a;
+        color: #efefef;
+    }
+
+    .correcto {
+        background: #1f441f !important;
+        border-color: #3fd93f !important;
+        color: #aef7ae !important;
+    }
+
+    .incorrecto {
+        background: #441f1f !important;
+        border-color: #ff5c5c !important;
+        color: #ffc2c2 !important;
+    }
+
+    button {
+        width: 48%;
+        padding: 12px;
+        margin-top: 10px;
+        border: none;
+        font-weight: bold;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    #nueva { background: #8e44ad; color: white; }
+    #verificar { background: #e67e22; color: white; }
+    #solucion { background: #16a085; color: white; width: 100%; margin-top: 15px; }
+    #ayuda { background: #2980b9; color: white; width: 100%; margin-top: 15px; }
+
+    #resultado, #sol_texto {
+        margin-top: 20px;
+        padding: 15px;
+        background: #222;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 15px;
+        height: 180px;
+        overflow-y: auto;
+        border: 1px solid #333;
+    }
+
+    #sol_texto { display: none; background: #252525; }
+
+    #teoria {
+        margin-top: 15px;
+        padding: 15px;
+        background: #252525;
+        border-radius: 8px;
+        display: none;
+        border: 1px solid #333;
+    }
+
+    #teoria h2 {
+        margin-top: 0;
+        font-size: 20px;
+        color: #7fc9ff;
+    }
+
+    .symbol-btn {
+        margin-left: 5px;
+        padding: 8px 12px;
+        background: #444;
+        color: white;
+        border: 1px solid #666;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 18px;
+    }
+
+    .input-row { display:flex; align-items:center; }
+</style>
+</head>
+
+<body>
+
+<div id="grafica"></div>
+
+<div id="panel">
+    <h1>Analizador de Gráficas</h1>
+
+    <label>Dominio (Df):</label>
+    <div class="input-row">
+        <input id="df" placeholder="Ej: (-∞,3]">
+        <button class="symbol-btn" onclick="insertSymbol('df','∞')">∞</button>
+        <button class="symbol-btn" onclick="insertSymbol('df','-∞')">−∞</button>
+    </div>
+
+    <label>Imagen (If):</label>
+    <div class="input-row">
+        <input id="if" placeholder="Ej: [0,∞)">
+        <button class="symbol-btn" onclick="insertSymbol('if','∞')">∞</button>
+        <button class="symbol-btn" onclick="insertSymbol('if','-∞')">−∞</button>
+    </div>
+
+    <label>Máximo:</label>
+    <div class="input-row">
+        <input id="max" placeholder="Ej: x=0,y=4">
+        <button class="symbol-btn" onclick="insertSymbol('max','∞')">∞</button>
+        <button class="symbol-btn" onclick="insertSymbol('max','-∞')">−∞</button>
+    </div>
+
+    <label>Mínimo:</label>
+    <div class="input-row">
+        <input id="min" placeholder="Ej: x=1,y=-2">
+        <button class="symbol-btn" onclick="insertSymbol('min','∞')">∞</button>
+        <button class="symbol-btn" onclick="insertSymbol('min','-∞')">−∞</button>
+    </div>
+
+    <label>Ordenada al origen (Oo):</label>
+    <input id="oo" placeholder="Ej: y=4">
+
+    <button id="nueva">Nueva función</button>
+    <button id="verificar">Verificar</button>
+    <button id="solucion">Mostrar solución</button>
+    <button id="ayuda">Mostrar teoría</button>
+
+    <div id="resultado"></div>
+    <div id="sol_texto"></div>
+
+    <div id="teoria">
+        <h2>📘 Teoría esencial</h2>
+
+    <p><b>Dominio (Df):</b> Conjunto de valores de x para los que la función está definida.</p>
+
+    <p><b>Imagen (If):</b> Conjunto de valores de y que puede tomar la función.</p>
+
+    <p><b>Ordenada al origen (Oo):</b> Valor donde la función corta el eje Y. Se obtiene evaluando la función en x = 0.</p>
+
+    <p><b>Ceros de la función (C°):</b> Valores de x donde la función vale 0 (donde toca el eje X).</p>
+
+    <p><b>Función constante:</b> Cuando todos los valores de y son iguales. No tiene máximo ni mínimo y no varía.</p>
+
+    <p><b>Conjunto de positividad (C+):</b> Conjunto de valores de x donde la función es mayor que 0.</p>
+
+    <p><b>Conjunto de negatividad (C–):</b> Conjunto de valores de x donde la función es menor que 0.</p>
+
+    <p><b>Máximo:</b> Valor más alto que alcanza la función en su dominio.</p>
+
+    <p><b>Mínimo:</b> Valor más bajo que alcanza la función en su dominio.</p>
+
+    <p><b>Crecimiento:</b> Intervalos donde la función sube (la y aumenta cuando aumenta x).</p>
+
+    <p><b>Decrecimiento:</b> Intervalos donde la función baja (la y disminuye cuando aumenta x).</p>
+</div>
+</div>
+
+<script>
+function insertSymbol(id, symbol) {
+    const campo = document.getElementById(id);
+    campo.value += symbol;
+    campo.focus();
+}
+
+const funciones = [
+    {
+        nombre: "Parábola",
+        rango: [-3, 3],
+        f: x => -x*x + 4,
+        analisis: {
+            df: "(-∞,∞)",
+            if: "(-∞,4]",
+            max: "x=0,y=4",
+            min: "No tiene",
+            oo: "y=4"
+        }
+    },
+
+    {
+        nombre: "Cúbica",
+        rango: [-3, 3],
+        f: x => x**3 - 3*x,
+        analisis: {
+            df: "(-∞,∞)",
+            if: "(-∞,∞)",
+            max: "x=-1,y=2",
+            min: "x=1,y=-2",
+            oo: "y=0"
+        }
+    },
+
+    {
+        nombre: "Seno",
+        rango: [-6.28, 6.28],
+        f: x => 2*Math.sin(x),
+        analisis: {
+            df: "(-∞,∞)",
+            if: "[-2,2]",
+            max: "No tiene",
+            min: "No tiene",
+            oo: "y=0"
+        }
+    },
+
+    {
+        nombre: "Exponencial",
+        rango: [-3, 3],
+        f: x => 2**x,
+        analisis: {
+            df: "(-∞,∞)",
+            if: "(0,∞)",
+            max: "No tiene",
+            min: "No tiene",
+            oo: "y=1"
+        }
+    }
+];
+
+let actual = null;
+let puntosSolucionIndices = []; 
+let solucionVisible = false;
+
+function nuevaFuncion() {
+    actual = funciones[Math.floor(Math.random() * funciones.length)];
+
+    let x = [], y = [];
+    for (let i = 0; i < 300; i++) {
+        let t = actual.rango[0] + i * (actual.rango[1] - actual.rango[0]) / 300;
+        x.push(t);
+        y.push(actual.f(t));
+    }
+
+    Plotly.newPlot("grafica", [{
+        x: x,
+        y: y,
+        mode: "lines",
+        line: { width: 3, color: "#74b9ff" },
+        name: "Función"
+    }], {
+        title: { text: actual.nombre, font: { color: "white", size: 24 } },
+        paper_bgcolor: "#181818",
+        plot_bgcolor: "#181818",
+        xaxis: { zeroline: true, color: "#ccc" },
+        yaxis: { zeroline: true, color: "#ccc" }
+    });
+
+    document.getElementById("solucion").innerText = "Mostrar solución";
+    document.getElementById("sol_texto").style.display = "none";
+    solucionVisible = false;
+    puntosSolucionIndices = [];
+
+    for (let id of ["df","if","max","min","oo"]) {
+        let campo = document.getElementById(id);
+        campo.value = "";
+        campo.classList.remove("correcto", "incorrecto");
+    }
+
+    document.getElementById("resultado").innerText = "";
+}
+
+function verificar() {
+    let r = actual.analisis;
+
+    const campos = {
+        df: "Dominio",
+        if: "Imagen",
+        max: "Máximo",
+        min: "Mínimo",
+        oo: "Ordenada al origen"
+    };
+
+    let txt = "";
+
+    for (let key in campos) {
+        let input = document.getElementById(key);
+        let val = input.value.trim().replace(/ /g, "").toLowerCase();
+        let correcto = r[key].replace(/ /g, "").toLowerCase();
+
+        if (!val) {
+            txt += `⚪ ${campos[key]} vacío.\n\n`;
+            continue;
+        }
+
+        if (val === correcto) {
+            input.classList.add("correcto");
+            input.classList.remove("incorrecto");
+            txt += `✅ ${campos[key]} correcto.\n\n`;
+        } else {
+            input.classList.add("incorrecto");
+            input.classList.remove("correcto");
+            txt += `❌ ${campos[key]} (${input.value}) — Correcto: ${r[key]}\n\n`;
+        }
+    }
+
+    document.getElementById("resultado").innerText = txt;
+}
+
+function mostrarSolucion() {
+    if (!solucionVisible) {
+        const sol = actual.analisis;
+        puntosSolucionIndices = []; 
+
+     
+        const gd = document.getElementById('grafica');
+        const before = (gd.data && gd.data.length) ? gd.data.length : 0;
+
+        const trazas = [];
+
+        if (sol.oo && sol.oo.toLowerCase() !== "no tiene") {
+            const y = parseFloat(sol.oo.replace("y=","").trim());
+            if (!isNaN(y)) {
+                trazas.push({
+                    x: [0],
+                    y: [y],
+                    mode: "markers",
+                    marker: { size: 12, color: "red" },
+                    name: "Ordenada al origen"
+                });
+            }
+        }
+
+        if (sol.max && sol.max.toLowerCase().includes("x=") && sol.max.toLowerCase().includes("y=")) {
+            try {
+                let tmp = sol.max.replace(/ /g,"").replace("x=","").split(",y=");
+                let x = parseFloat(tmp[0]);
+                let y = parseFloat(tmp[1]);
+                if (!isNaN(x) && !isNaN(y)) {
+                    trazas.push({
+                        x: [x],
+                        y: [y],
+                        mode: "markers",
+                        marker: { size: 12, color: "blue" },
+                        name: "Máximo"
+                    });
+                }
+            } catch(e) { /* ignorar si no parsea */ }
+        }
+
+        if (sol.min && sol.min.toLowerCase().includes("x=") && sol.min.toLowerCase().includes("y=")) {
+            try {
+                let tmp = sol.min.replace(/ /g,"").replace("x=","").split(",y=");
+                let x = parseFloat(tmp[0]);
+                let y = parseFloat(tmp[1]);
+                if (!isNaN(x) && !isNaN(y)) {
+                    trazas.push({
+                        x: [x],
+                        y: [y],
+                        mode: "markers",
+                        marker: { size: 12, color: "green" },
+                        name: "Mínimo"
+                    });
+                }
+            } catch(e) { /* ignorar si no parsea */ }
+        }
+
+        if (trazas.length > 0) {
+            Plotly.addTraces('grafica', trazas);
+            const after = (gd.data && gd.data.length) ? gd.data.length : 0;
+            // índices añadidos = before .. after-1
+            for (let i = before; i < after; i++) puntosSolucionIndices.push(i);
+        }
+
+        let txt =
+`📌 SOLUCIÓN CORRECTA
+
+Dominio: ${sol.df}
+Imagen: ${sol.if}
+Máximo: ${sol.max}
+Mínimo: ${sol.min}
+Ordenada al origen: ${sol.oo}`;
+
+        document.getElementById("sol_texto").innerText = txt;
+        document.getElementById("sol_texto").style.display = "block";
+
+        document.getElementById("solucion").innerText = "Ocultar solución";
+        solucionVisible = true;
+
+    } else {
+
+        if (puntosSolucionIndices.length > 0) {
+
+            try {
+                Plotly.deleteTraces('grafica', puntosSolucionIndices);
+            } catch (e) {
+
+                Plotly.newPlot('grafica', [{
+                    x: (function(){ 
+                        const t = [];
+                        for (let i=0;i<300;i++){
+                            let a=actual.rango[0] + i*(actual.rango[1]-actual.rango[0])/300;
+                            t.push(a);
+                        }
+                        return t;
+                    })(),
+                    y: (function(){
+                        const t = [];
+                        for (let i=0;i<300;i++){
+                            let a=actual.rango[0] + i*(actual.rango[1]-actual.rango[0])/300;
+                            t.push(actual.f(a));
+                        }
+                        return t;
+                    })(),
+                    mode: "lines",
+                    line: { width: 3, color: "#74b9ff" },
+                    name: "Función"
+                }], {
+                    title: { text: actual.nombre, font: { color: "white", size: 24 } },
+                    paper_bgcolor: "#181818",
+                    plot_bgcolor: "#181818",
+                    xaxis: { zeroline: true, color: "#ccc" },
+                    yaxis: { zeroline: true, color: "#ccc" }
+                });
+            }
+        }
+        document.getElementById("sol_texto").style.display = "none";
+        document.getElementById("solucion").innerText = "Mostrar solución";
+        solucionVisible = false;
+        puntosSolucionIndices = [];
+    }
+}
+
+document.getElementById("nueva").onclick = nuevaFuncion;
+document.getElementById("verificar").onclick = verificar;
+document.getElementById("solucion").onclick = mostrarSolucion;
+
+document.getElementById("ayuda").onclick = () => {
+    let t = document.getElementById("teoria");
+    t.style.display = (t.style.display === "none") ? "block" : "none";
+};
+
+nuevaFuncion();
+</script>
+
+</body>
+</html>
